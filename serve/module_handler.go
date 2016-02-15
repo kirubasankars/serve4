@@ -6,9 +6,9 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-type ModuleHandler struct{}
+type ServeHTTPHandler struct{}
 
-func (moduleHandler *ModuleHandler) ServeHTTP(ctx *ServeContext, w http.ResponseWriter, r *http.Request) {
+func (serveHTTPHandler *ServeHTTPHandler) ServeHTTP(ctx *ServeContext, w http.ResponseWriter, r *http.Request) {
 
 	if ctx == nil || ctx.Module == nil {
 		http.NotFound(w, r)
@@ -30,7 +30,7 @@ func (moduleHandler *ModuleHandler) ServeHTTP(ctx *ServeContext, w http.Response
 		if cookie, err := r.Cookie("_auth"); err == nil {
 			value := make(map[string]string)
 			if err = jar.Decode("_auth", cookie.Value, &value); err == nil {
-				moduleHandler.Serve(ctx, w, r)
+				serveHTTPHandler.Serve(ctx, w, r)
 			} else {
 				http.Redirect(w, r, prefix+"/_auth?redirectUrl="+r.URL.Path, http.StatusFound)
 			}
@@ -38,11 +38,11 @@ func (moduleHandler *ModuleHandler) ServeHTTP(ctx *ServeContext, w http.Response
 			http.Redirect(w, r, prefix+"/_auth?redirectUrl="+r.URL.Path, http.StatusFound)
 		}
 	} else {
-		moduleHandler.Serve(ctx, w, r)
+		serveHTTPHandler.Serve(ctx, w, r)
 	}
 }
 
-func (moduleHandler *ModuleHandler) Serve(ctx *ServeContext, w http.ResponseWriter, r *http.Request) {
+func (serveHTTPHandler *ServeHTTPHandler) Serve(ctx *ServeContext, w http.ResponseWriter, r *http.Request) {
 	newR, _ := http.NewRequest(r.Method, "/"+ctx.Module.Name+r.URL.Path[ctx.URILength:], nil)
 	handler, _ := ctx.Module.mux.Handler(newR)
 	newR.URL.Path = r.URL.Path

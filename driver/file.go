@@ -61,7 +61,7 @@ func (fs *FileSystem) GetPath(server serve.Server, url string) (string, []string
 			if f, _ := os.Stat(modulePath); f != nil {
 				moduleName = path
 				length += 1 + len(moduleName)
-				return "", nil, moduleName, length, nil
+				return appName, sites, moduleName, length, nil
 			} else {
 				return appName, sites, "", length, errors.New(path + " is not a site/module")
 			}

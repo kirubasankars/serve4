@@ -3,6 +3,7 @@ package serve
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type ServeContext struct {
@@ -29,9 +30,8 @@ func NewContext(server *Server, url string) *ServeContext {
 	getSite(ctx, siteNames)
 	getModule(ctx, moduleName)
 
-	fmt.Println(ctx)
-
 	ctx.Server = server
+
 	return ctx
 }
 
@@ -75,7 +75,6 @@ func getSite(ctx *ServeContext, sites []string) {
 				site = sitesMap[name]
 				sitesMap = site.Sites
 			}
-
 			if len(sites) == idx+1 {
 				ctx.Site = site
 			}
@@ -88,7 +87,24 @@ func getModule(ctx *ServeContext, name string) {
 
 	if name == "" {
 		if ctx.GetConfig("modules.@0") != nil {
-			name = *ctx.GetConfig("modules.@0")
+			name, _ = ctx.GetConfig("modules.@0").(string)
+		}
+	} else {
+		if name != "_auth" {
+			if ctx.GetConfig("modules") != nil {
+				//check wheather part of config modules
+				l, _ := ctx.GetConfig("modules.$length").(int)
+				matched := false
+				for i := 0; i < l; i++ {
+					t, _ := ctx.GetConfig("modules.@" + strconv.Itoa(i)).(string)
+					if t == name {
+						matched = true
+					}
+				}
+				if matched == false {
+					name = ""
+				}
+			}
 		}
 	}
 
@@ -106,8 +122,8 @@ func getModule(ctx *ServeContext, name string) {
 	}
 }
 
-func (ctx *ServeContext) GetConfig(key string) *string {
-	var value *string
+func (ctx *ServeContext) GetConfig(key string) interface{} {
+	var value interface{}
 
 	if ctx.Module != nil {
 		value = ctx.Module.getConfig(key)
@@ -118,15 +134,13 @@ func (ctx *ServeContext) GetConfig(key string) *string {
 
 	site := ctx.Site
 
-C:
-	if site != nil {
+	for site != nil {
 		value = site.getConfig(key)
 		if value != nil {
 			return value
 		} else {
 			if site.Parent != nil {
 				site = site.Parent
-				goto C
 			}
 		}
 	}

@@ -33,6 +33,8 @@ func (server *Server) Path() string {
 func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t1 := time.Now()
 
+	fmt.Println("dsadasd", r.URL.Path)
+
 	if r.URL.Path == "/favicon.ico" {
 		http.NotFound(w, r)
 		return
@@ -40,23 +42,18 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := NewContext(server, r.URL.Path)
 
-	mh := new(ModuleHandler)
+	mh := new(ServeHTTPHandler)
 	mh.ServeHTTP(ctx, w, r)
 
 	t2 := time.Now()
 	log.Printf("[%s] %q %v\n", r.Method, r.URL.String(), t2.Sub(t1))
 }
 
-func (server *Server) getConfig(key string) *string {
+func (server *Server) getConfig(key string) interface{} {
 	if server.Config == nil {
 		return nil
 	}
-
-	if v, e := server.Config.Get(key).(string); e == true {
-		return &v
-	} else {
-		return nil
-	}
+	return server.Config.Get(key)
 }
 
 func (server *Server) Start() {

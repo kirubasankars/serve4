@@ -18,13 +18,9 @@ type Site struct {
 	server *Server
 }
 
-func (site *Site) getConfig(key string) *string {
+func (site *Site) getConfig(key string) interface{} {
 	if site.Config == nil {
 		return nil
 	}
-	if v, e := site.Config.Get(key).(string); e == true {
-		return &v
-	} else {
-		return nil
-	}
+	return site.Config.Get(key)
 }

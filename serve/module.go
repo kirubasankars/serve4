@@ -22,15 +22,11 @@ type Module struct {
 	server *Server
 }
 
-func (module *Module) getConfig(key string) *string {
+func (module *Module) getConfig(key string) interface{} {
 	if module.Config == nil {
 		return nil
 	}
-	if v, e := module.Config.Get(key).(string); e == true {
-		return &v
-	} else {
-		return nil
-	}
+	return module.Config.Get(key)
 }
 
 func (module *Module) Build() {
@@ -44,16 +40,27 @@ func (module *Module) Build() {
 	mux := module.mux
 	for pattern, handler := range module.handlers {
 		if pattern != "" {
-			mux.HandleFunc("/"+module.Name+pattern, func(w http.ResponseWriter, r *http.Request) {
-				ctx := NewContext(module.server, r.URL.Path)
-				handler(*ctx, w, r)
-			})
+			var mh = new(ModuleHandler)
+			mh.handler = handler
+			mh.module = module
+			uri := "/" + module.Name + pattern
+			mux.Handle(uri, mh)
 
-			if pattern == "/" {
-				mux.HandleFunc("/"+module.Name, func(w http.ResponseWriter, r *http.Request) {
+			if pattern[len(pattern)-1:] == "/" && module.handlers[pattern[:len(pattern)-1]] == nil {
+				mux.HandleFunc(uri[:len(uri)-1], func(w http.ResponseWriter, r *http.Request) {
 					http.Redirect(w, r, r.URL.Path+"/", 301)
 				})
 			}
 		}
 	}
+}
+
+type ModuleHandler struct {
+	handler ServeHandler
+	module  *Module
+}
+
+func (mh *ModuleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := NewContext(mh.module.server, r.URL.Path)
+	mh.handler(*ctx, w, r)
 }
