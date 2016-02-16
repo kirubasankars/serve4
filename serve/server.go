@@ -33,8 +33,6 @@ func (server *Server) Path() string {
 func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t1 := time.Now()
 
-	fmt.Println("dsadasd", r.URL.Path)
-
 	if r.URL.Path == "/favicon.ico" {
 		http.NotFound(w, r)
 		return
@@ -74,7 +72,25 @@ func NewServer(path string, port string) *Server {
 	server.mux = http.NewServeMux()
 	server.mux.Handle("/", server)
 
+	server.jar = createJar(server.Config)
+
 	return server
+}
+
+func createJar(config *metal.Metal) *securecookie.SecureCookie {
+	if config == nil {
+		return nil
+	}
+	var (
+		hash  string
+		block string
+	)
+	hash, _ = config.Get("settings.hash").(string)
+	block, _ = config.Get("settings.block").(string)
+	if hash == "" || block == "" {
+		return nil
+	}
+	return securecookie.New([]byte(hash), []byte(block))
 }
 
 func getConfig(path string) *metal.Metal {

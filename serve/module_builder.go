@@ -13,4 +13,5 @@ func RegisterHandlerProvider(name string, mhr ModuleHandlerProvider) {
 func init() {
 	moduleHanlderProvider = make(map[string]ModuleHandlerProvider)
 	RegisterHandlerProvider(".", new(CommonSiteBuilder))
+	RegisterHandlerProvider("_auth", new(AuthSiteBuilder))
 }

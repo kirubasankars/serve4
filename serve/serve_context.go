@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/securecookie"
 )
 
 type ServeContext struct {
@@ -42,6 +44,7 @@ func getApp(ctx *ServeContext, name string) {
 	}
 	if app, p := server.Apps[name]; p == false {
 		app := server.System.GetApplication(*ctx, name)
+		app.jar = createJar(app.Config)
 		app.Sites = make(map[string]*Site)
 		server.Apps[name] = app
 		ctx.Application = app
@@ -157,4 +160,18 @@ func (ctx *ServeContext) GetConfig(key string) interface{} {
 		return value
 	}
 	return nil
+}
+
+func (ctx *ServeContext) GetJar() (*securecookie.SecureCookie, string) {
+	var jar *securecookie.SecureCookie
+	var prefix string
+	if ctx.Application != nil && ctx.Application.jar != nil {
+		jar = ctx.Application.jar
+		prefix = ctx.Application.URI
+	} else {
+		jar = ctx.Server.jar
+		prefix = "/"
+	}
+
+	return jar, prefix
 }

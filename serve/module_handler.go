@@ -1,41 +1,23 @@
 package serve
 
-import (
-	"net/http"
-
-	"github.com/gorilla/securecookie"
-)
+import "net/http"
 
 type ServeHTTPHandler struct{}
 
 func (serveHTTPHandler *ServeHTTPHandler) ServeHTTP(ctx *ServeContext, w http.ResponseWriter, r *http.Request) {
+
+	fa := new(FormsAuthentication)
 
 	if ctx == nil || ctx.Module == nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	var prefix string
-	var jar *securecookie.SecureCookie
-
-	if ctx.Application != nil {
-		prefix = ctx.Application.URI
-		jar = ctx.Application.jar
-	} else {
-		prefix = ""
-		jar = ctx.Server.jar
-	}
-
 	if ctx.Module.AuthEnabled {
-		if cookie, err := r.Cookie("_auth"); err == nil {
-			value := make(map[string]string)
-			if err = jar.Decode("_auth", cookie.Value, &value); err == nil {
-				serveHTTPHandler.Serve(ctx, w, r)
-			} else {
-				http.Redirect(w, r, prefix+"/_auth?redirectUrl="+r.URL.Path, http.StatusFound)
-			}
+		if fa.Validate(ctx, w, r) {
+			serveHTTPHandler.Serve(ctx, w, r)
 		} else {
-			http.Redirect(w, r, prefix+"/_auth?redirectUrl="+r.URL.Path, http.StatusFound)
+			fa.RedirectToLogin(*ctx, w, r)
 		}
 	} else {
 		serveHTTPHandler.Serve(ctx, w, r)

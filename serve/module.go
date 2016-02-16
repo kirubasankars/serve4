@@ -46,7 +46,7 @@ func (module *Module) Build() {
 			uri := "/" + module.Name + pattern
 			mux.Handle(uri, mh)
 
-			if pattern[len(pattern)-1:] == "/" && module.handlers[pattern[:len(pattern)-1]] == nil {
+			if pattern == "/" || (pattern[len(pattern)-1:] == "/" && module.handlers[pattern[:len(pattern)-1]] == nil) {
 				mux.HandleFunc(uri[:len(uri)-1], func(w http.ResponseWriter, r *http.Request) {
 					http.Redirect(w, r, r.URL.Path+"/", 301)
 				})
